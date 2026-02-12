@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dhananjay Mourya's Ultimate Scientific Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- QR Code Generator Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .calc-font { font-family: 'JetBrains Mono', monospace; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
+        .btn-shadow { box-shadow: 0 4px 0 rgba(0,0,0,0.4); transition: all 0.1s; }
+        .btn-shadow:active { transform: translateY(4px); box-shadow: 0 0 0 rgba(0,0,0,0.4); }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .screen-glow { box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
+        .mode-panel { transition: opacity 0.3s ease, transform 0.3s ease; }
+        .hidden-mode { display: none; opacity: 0; pointer-events: none; transform: scale(0.95); }
+        .error-shake { animation: shake 0.5s; }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+        .alpha-mode { background: #8b5cf6 !important; color: white !important; box-shadow: 0 0 15px rgba(139, 92, 246, 0.5); }
+        .angle-active { background: #10b981 !important; color: white !important; }
+        .step-box { background: rgba(59, 130, 246, 0.1); border-left: 3px solid #3b82f6; padding: 0.5rem; margin: 0.25rem 0; border-radius: 0 0.375rem 0.375rem 0; }
+    </style>
+</head>
+<body class="flex items-center justify-center text-white p-4">
+
+    <div class="relative w-full max-w-6xl flex flex-col md:flex-row gap-4">
+        
+        <!-- Left Side: Main Calculator -->
+        <div class="flex-1 flex flex-col gap-4">
+            
+            <!-- Header -->
+            <div class="glass-panel rounded-xl p-3 flex justify-between items-center flex-wrap gap-2">
+                <div class="flex gap-2 flex-wrap">
+                    <button onclick="setMode('calc')" id="btn-mode-calc" class="px-3 py-1 rounded bg-blue-600 text-xs font-bold shadow-lg transition hover:bg-blue-500">CALC</button>
+                    <button onclick="setMode('frac')" id="btn-mode-frac" class="px-3 py-1 rounded bg-slate-700 text-xs font-bold transition hover:bg-slate-600">FRAC</button>
+                    <button onclick="setMode('complex')" id="btn-mode-complex" class="px-3 py-1 rounded bg-slate-700 text-xs font-bold transition hover:bg-slate-600">CPLX</button>
+                    <button onclick="setMode('prog')" id="btn-mode-prog" class="px-3 py-1 rounded bg-slate-700 text-xs font-bold transition hover:bg-slate-600">PROG</button>
+                    <button onclick="setMode('matrix')" id="btn-mode-matrix" class="px-3 py-1 rounded bg-slate-700 text-xs font-bold transition hover:bg-slate-600">MAT</button>
+                    <button onclick="setMode('convert')" id="btn-mode-convert" class="px-3 py-1 rounded bg-slate-700 text-xs font-bold transition hover:bg-slate-600">CONV</button>
+                    <button onclick="setMode('solver')" id="btn-mode-solver" class="px-3 py-1 rounded bg-slate-700 text-xs font-bold transition hover:bg-slate-600">SOLV</button>
+                    <button onclick="setMode('stats')" id="btn-mode-stats" class="px-3 py-1 rounded bg-slate-700 text-xs font-bold transition hover:bg-slate-600">STAT</button>
+                </div>
+                <div class="text-xs text-slate-400 font-mono">Ultimate Edition v6.1</div>
+            </div>
+
+            <!-- CALC Mode -->
+            <div id="mode-calc" class="mode-panel flex flex-col gap-4">
+                <div class="glass-panel rounded-2xl p-1 screen-glow relative overflow-hidden h-48 flex flex-col justify-end">
+                    <div id="multiview-lines" class="flex flex-col gap-1 px-4 pt-2 opacity-60 text-sm calc-font text-right overflow-hidden h-24 mb-2">
+                        <div class="text-slate-400">MultiView Display - Last 4 calculations</div>
+                    </div>
+                    <div class="px-4 pb-4">
+                        <input type="text" id="calc-input" 
+                            class="w-full bg-transparent text-right calc-font text-3xl md:text-4xl font-bold text-white outline-none placeholder-slate-600"
+                            placeholder="0" readonly>
+                        <div id="step-display" class="hidden text-left text-xs text-blue-300 mt-2 font-mono overflow-y-auto max-h-16"></div>
+                    </div>
+                    <div class="absolute top-3 left-4 flex gap-2 text-[10px] font-bold">
+                        <span id="ind-alpha" class="text-purple-400 opacity-0">ALPHA</span>
+                        <span id="ind-mem" class="text-yellow-500 opacity-0">M</span>
+                        <span id="ind-angle" class="text-green-400">DEG</span>
+                        <span id="ind-step" class="text-blue-400 opacity-0 cursor-pointer" onclick="toggleSteps()">STEP</span>
+                        <span id="ind-error" class="text-red-500 hidden">ERR</span>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-2xl p-4 grid grid-cols-5 gap-3 select-none">
+                    <button onclick="toggleAlpha()" id="btn-alpha" class="btn-shadow bg-purple-600 rounded-lg text-white font-bold text-sm hover:bg-purple-500">ALPHA</button>
+                    <button onclick="toggleSteps()" id="btn-step" class="btn-shadow bg-blue-700 rounded-lg text-white font-bold text-sm hover:bg-blue-600">STEP</button>
+                    <button onclick="backspace()" class="btn-shadow bg-orange-600 rounded-lg text-white font-bold text-sm hover:bg-orange-500 flex items-center justify-center">⌫</button>
+                    <button onclick="clearAll()" class="btn-shadow bg-red-600 rounded-lg text-white font-bold text-sm hover:bg-red-500">AC</button>
+                    <button onclick="handleOp('/')" class="btn-shadow bg-slate-600 rounded-lg text-white font-bold text-xl hover:bg-slate-500">÷</button>
+
+                    <button onclick="setAngleMode('DEG')" id="btn-deg" class="btn-shadow bg-emerald-600 rounded-lg text-white font-bold text-sm hover:bg-emerald-500 angle-active">DEG</button>
+                    <button onclick="setAngleMode('RAD')" id="btn-rad" class="btn-shadow bg-slate-700 rounded-lg text-white font-bold text-sm hover:bg-slate-600">RAD</button>
+                    <button onclick="insertFunction('pow')" class="btn-shadow bg-slate-800 rounded-lg text-blue-300 font-bold text-sm hover:bg-slate-700">x^y</button>
+                    <button onclick="insertFunction('sqrt')" class="btn-shadow bg-slate-800 rounded-lg text-blue-300 font-bold text-sm hover:bg-slate-700">√</button>
+                    <button onclick="handleOp(')')" class="btn-shadow bg-slate-800 rounded-lg text-blue-300 font-bold text-sm hover:bg-slate-700">)</button>
+
+                    <button onclick="insertFunction('sin')" class="btn-shadow bg-slate-800 rounded-lg text-blue-300 font-bold text-sm hover:bg-slate-700">sin</button>
+                    <button onclick="insertFunction('cos')" class="btn-shadow bg-slate-800 rounded-lg text-blue-300 font-bold text-sm hover:bg-slate-700">cos</button>
+                    <button onclick="insertFunction('tan')" class="btn-shadow bg-slate-800 rounded-lg text-blue-300 font-bold text-sm hover:bg-slate-700">tan</button>
+                    <button onclick="insertFunction('log')" class="btn-shadow bg-slate-800 rounded-lg text-blue-300 font-bold text-sm hover:bg-slate-700">log</button>
+                    <button onclick="insertFunction('ln')" class="btn-shadow bg-slate-800 rounded-lg text-blue-300 font-bold text-sm hover:bg-slate-700">ln</button>
+
+                    <button onclick="handleInput('7')" class="btn-shadow bg-slate-900 rounded-lg text-white font-bold text-xl hover:bg-slate-800" data-alpha="A">7</button>
+                    <button onclick="handleInput('8')" class="btn-shadow bg-slate-900 rounded-lg text-white font-bold text-xl hover:bg-slate-800" data-alpha="B">8</button>
+                    <button onclick="handleInput('9')" class="btn-shadow bg-slate-900 rounded-lg text-white font-bold text-xl hover:bg-slate-800" data-alpha="C">9</button>
+                    <button onclick="memoryClear()" class="btn-shadow bg-slate-700 rounded-lg text-cyan-400 font-bold text-sm hover:bg-slate-600">MC</button>
+                    <button onclick="handleOp('*')" class="btn-shadow bg-slate-600 rounded-lg text-white font-bold text-xl hover:bg-slate-500">×</button>
+
+                    <button onclick="handleInput('4')" class="btn-shadow bg-slate-900 rounded-lg text-white font-bold text-xl hover:bg-slate-800" data-alpha="D">4</button>
+                    <button onclick="handleInput('5')" class="btn-shadow bg-slate-900 rounded-lg text-white font-bold text-xl hover:bg-slate-800" data-alpha="E">5</button>
+                    <button onclick="handleInput('6')" class="btn-shadow bg-slate-900 rounded-lg text-white font-bold text-xl hover:bg-slate-800" data-alpha="F">6</button>
+                    <button onclick="memoryRecall()" class="btn-shadow bg-slate-700 rounded-lg text-cyan-400 font-bold text-sm hover:bg-slate-600">MR</button>
+                    <button onclick="handleOp('-')" class="btn-shadow bg-slate-600 rounded-lg text-white font-bold text-xl hover:bg-slate-500">-</button>
+
+                    <button onclick="handleInput('1')" class="btn-shadow bg-slate-900 rounded-lg text-white font-bold text-xl hover:bg-slate-800" data-alpha="G">1</button>
+                    <button onclick="handleInput('2')" class="btn-shadow bg-slate-900 rounded-lg text-white font-bold text-xl hover:bg-slate-800" data-alpha="H">2</button>
+                    <button onclick="handleInput('3')" class="btn-shadow bg-slate-900 rounded-lg text-white font-bold text-xl hover:bg-slate-800" data-alpha="I">3</button>
+                    <button onclick="memoryAdd()" class="btn-shadow bg-slate-700 rounded-lg text-cyan-400 font-bold text-sm hover:bg-slate-600">M+</button>
+                    <button onclick="handleOp('+')" class="btn-shadow bg-slate-600 rounded-lg text-white font-bold text-xl hover:bg-slate-500">+</button>
+
+                    <button onclick="handleInput('0')" class="btn-shadow bg-slate-900 rounded-lg text-white font-bold text-xl hover:bg-slate-800" data-alpha=" ">0</button>
+                    <button onclick="handleInput('.')" class="btn-shadow bg-slate-900 rounded-lg text-white font-bold text-xl hover:bg-slate-800" data-alpha=",">.</button>
+                    <button onclick="handleOp('(')" class="btn-shadow bg-slate-800 rounded-lg text-blue-300 font-bold text-sm hover:bg-slate-700">(</button>
+                    <button onclick="toggleSign()" class="btn-shadow bg-slate-700 rounded-lg text-white font-bold text-sm hover:bg-slate-600">+/-</button>
+                    <button onclick="calculate()" class="btn-shadow bg-blue-600 rounded-lg text-white font-bold text-xl hover:bg-blue-500">=</button>
+                </div>
+            </div>
+
+            <!-- FRACTION Mode -->
+            <div id="mode-frac" class="hidden-mode glass-panel rounded-2xl p-6 flex flex-col h-96">
+                <h3 class="text-xl font-bold mb-4 text-pink-400">Fraction Calculator</h3>
+                <div class="flex gap-2 mb-4">
+                    <button onclick="setFracMode('mixed')" id="frac-mixed" class="flex-1 bg-pink-600 py-2 rounded font-bold text-sm">Mixed a b/c</button>
+                    <button onclick="setFracMode('improper')" id="frac-improper" class="flex-1 bg-slate-700 py-2 rounded font-bold text-sm">Improper n/d</button>
+                </div>
+                
+                <div id="frac-mixed-input" class="flex items-center gap-2 mb-4">
+                    <input type="number" id="frac-whole" placeholder="a" class="bg-slate-800 w-16 p-2 rounded text-center text-lg">
+                    <input type="number" id="frac-num" placeholder="b" class="bg-slate-800 w-16 p-2 rounded text-center text-lg border-b-2 border-white">
+                    <span class="text-2xl">/</span>
+                    <input type="number" id="frac-den" placeholder="c" class="bg-slate-800 w-16 p-2 rounded text-center text-lg">
+                </div>
+
+                <div id="frac-improper-input" class="hidden flex items-center gap-2 mb-4">
+                    <input type="number" id="frac-imp-num" placeholder="numerator" class="bg-slate-800 w-24 p-2 rounded text-center text-lg border-b-2 border-white">
+                    <span class="text-2xl">/</span>
+                    <input type="number" id="frac-imp-den" placeholder="denominator" class="bg-slate-800 w-24 p-2 rounded text-center text-lg">
+                </div>
+
+                <div class="flex gap-2 mb-4">
+                    <select id="frac-op" class="bg-slate-800 rounded px-3 py-2 text-white">
+                        <option value="+">+</option>
+                        <option value="-">−</option>
+                        <option value="*">×</option>
+                        <option value="/">÷</option>
+                    </select>
+                    <button onclick="addFraction()" class="bg-pink-600 px-4 py-2 rounded font-bold hover:bg-pink-500">Add Fraction</button>
+                </div>
+
+                <div id="frac-list" class="bg-slate-900 rounded p-2 mb-4 h-20 overflow-y-auto text-sm"></div>
+
+                <div class="flex gap-2">
+                    <button onclick="calculateFractions()" class="flex-1 bg-green-600 py-3 rounded font-bold hover:bg-green-500">Calculate</button>
+                    <button onclick="clearFractions()" class="bg-red-600 px-4 py-3 rounded font-bold hover:bg-red-500">Clear</button>
+                </div>
+
+                <div id="frac-result" class="mt-4 text-center text-2xl font-bold text-pink-300"></div>
+            </div>
+
+            <!-- COMPLEX Mode -->
+            <div id="mode-complex" class="hidden-mode glass-panel rounded-2xl p-6 flex flex-col h-96">
+                <h3 class="text-xl font-bold mb-4 text-violet-400">Complex Numbers (a + bi)</h3>
+                
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="text-xs text-slate-400">First Number (z₁)</label>
+                        <div class="flex items-center gap-1">
+                            <input type="number" id="cplx1-real" placeholder="a" class="bg-slate-800 w-20 p-2 rounded text-center">
+                            <span>+</span>
+                            <input type="number" id="cplx1-imag" placeholder="b" class="bg-slate-800 w-20 p-2 rounded text-center">
+                            <span class="text-violet-400 font-bold">i</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400">Second Number (z₂)</label>
+                        <div class="flex items-center gap-1">
+                            <input type="number" id="cplx2-real" placeholder="c" class="bg-slate-800 w-20 p-2 rounded text-center">
+                            <span>+</span>
+                            <input type="number" id="cplx2-imag" placeholder="d" class="bg-slate-800 w-20 p-2 rounded text-center">
+                            <span class="text-violet-400 font-bold">i</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-4 gap-2 mb-4">
+                    <button onclick="complexOp('add')" class="bg-violet-600 py-2 rounded font-bold hover:bg-violet-500">z₁ + z₂</button>
+                    <button onclick="complexOp('sub')" class="bg-violet-600 py-2 rounded font-bold hover:bg-violet-500">z₁ − z₂</button>
+                    <button onclick="complexOp('mul')" class="bg-violet-600 py-2 rounded font-bold hover:bg-violet-500">z₁ × z₂</button>
+                    <button onclick="complexOp('div')" class="bg-violet-600 py-2 rounded font-bold hover:bg-violet-500">z₁ ÷ z₂</button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                    <button onclick="complexOp('conj')" class="bg-slate-700 py-2 rounded font-bold hover:bg-slate-600">Conjugate z₁</button>
+                    <button onclick="complexOp('mag')" class="bg-slate-700 py-2 rounded font-bold hover:bg-slate-600">|z₁| Magnitude</button>
+                    <button onclick="complexOp('arg')" class="bg-slate-700 py-2 rounded font-bold hover:bg-slate-600">arg(z₁) Angle</button>
+                    <button onclick="complexOp('polar')" class="bg-slate-700 py-2 rounded font-bold hover:bg-slate-600">Polar Form</button>
+                </div>
+
+                <div id="cplx-result" class="flex-1 bg-slate-900 rounded border border-violet-700 flex items-center justify-center text-xl font-bold text-white">
+                    Enter complex numbers and select operation
+                </div>
+            </div>
+
+            <!-- PROGRAMMER Mode -->
+            <div id="mode-prog" class="hidden-mode glass-panel rounded-2xl p-6 flex flex-col h-96">
+                <h3 class="text-xl font-bold mb-4 text-amber-400">Programmer Mode</h3>
+                
+                <div class="flex gap-2 mb-4">
+                    <button onclick="setBase('DEC')" id="base-dec" class="flex-1 bg-amber-600 py-2 rounded font-bold text-sm">DEC</button>
+                    <button onclick="setBase('HEX')" id="base-hex" class="flex-1 bg-slate-700 py-2 rounded font-bold text-sm">HEX</button>
+                    <button onclick="setBase('OCT')" id="base-oct" class="flex-1 bg-slate-700 py-2 rounded font-bold text-sm">OCT</button>
+                    <button onclick="setBase('BIN')" id="base-bin" class="flex-1 bg-slate-700 py-2 rounded font-bold text-sm">BIN</button>
+                </div>
+
+                <div class="bg-slate-900 rounded p-3 mb-4">
+                    <div class="text-xs text-slate-400 mb-1">All Bases:</div>
+                    <div class="grid grid-cols-1 gap-1 text-sm font-mono">
+                        <div class="flex justify-between"><span class="text-amber-400">DEC:</span> <span id="prog-dec">0</span></div>
+                        <div class="flex justify-between"><span class="text-amber-400">HEX:</span> <span id="prog-hex">0</span></div>
+                        <div class="flex justify-between"><span class="text-amber-400">OCT:</span> <span id="prog-oct">0</span></div>
+                        <div class="flex justify-between"><span class="text-amber-400">BIN:</span> <span id="prog-bin">0</span></div>
+                    </div>
+                </div>
+
+                <input type="text" id="prog-input" class="bg-slate-800 rounded p-3 text-right text-xl font-mono mb-4 text-white" placeholder="0" oninput="updateProgBases()">
+
+                <div class="grid grid-cols-4 gap-2 mb-4">
+                    <button onclick="progInput('7')" class="btn-shadow bg-slate-800 py-3 rounded font-bold hover:bg-slate-700 prog-num">7</button>
+                    <button onclick="progInput('8')" class="btn-shadow bg-slate-800 py-3 rounded font-bold hover:bg-slate-700 prog-num">8</button>
+                    <button onclick="progInput('9')" class="btn-shadow bg-slate-800 py-3 rounded font-bold hover:bg-slate-700 prog-num">9</button>
+                    <button onclick="progOp('<<')" class="btn-shadow bg-amber-700 py-3 rounded font-bold hover:bg-amber-600"><<</button>
+
+                    <button onclick="progInput('4')" class="btn-shadow bg-slate-800 py-3 rounded font-bold hover:bg-slate-700 prog-num">4</button>
+                    <button onclick="progInput('5')" class="btn-shadow bg-slate-800 py-3 rounded font-bold hover:bg-slate-700 prog-num">5</button>
+                    <button onclick="progInput('6')" class="btn-shadow bg-slate-800 py-3 rounded font-bold hover:bg-slate-700 prog-num">6</button>
+                    <button onclick="progOp('>>')" class="btn-shadow bg-amber-700 py-3 rounded font-bold hover:bg-amber-600">>></button>
+
+                    <button onclick="progInput('1')" class="btn-shadow bg-slate-800 py-3 rounded font-bold hover:bg-slate-700 prog-num">1</button>
+                    <button onclick="progInput('2')" class="btn-shadow bg-slate-800 py-3 rounded font-bold hover:bg-slate-700 prog-num">2</button>
+                    <button onclick="progInput('3')" class="btn-shadow bg-slate-800 py-3 rounded font-bold hover:bg-slate-700 prog-num">3</button>
+                    <button onclick="progOp('XOR')" class="btn-shadow bg-amber-700 py-3 rounded font-bold hover:bg-amber-600">XOR</button>
+
+                    <button onclick="progInput('0')" class="btn-shadow bg-slate-800 py-3 rounded font-bold hover:bg-slate-700 prog-num col-span-2">0</button>
+                    <button onclick="progInput('A')" id="prog-a" class="btn-shadow bg-slate-800 py-3 rounded font-bold hover:bg-slate-700 prog-hex hidden">A</button>
+                    <button onclick="progClear()" class="btn-shadow bg-red-600 py-3 rounded font-bold hover:bg-red-500">AC</button>
+                </div>
+
+                <div class="grid grid-cols-4 gap-2">
+                    <button onclick="progOp('AND')" class="btn-shadow bg-amber-700 py-2 rounded font-bold text-sm hover:bg-amber-600">AND</button>
+                    <button onclick="progOp('OR')" class="btn-shadow bg-amber-700 py-2 rounded font-bold text-sm hover:bg-amber-600">OR</button>
+                    <button onclick="progOp('NOT')" class="btn-shadow bg-amber-700 py-2 rounded font-bold text-sm hover:bg-amber-600">NOT</button>
+                    <button onclick="progCalc()" class="btn-shadow bg-green-600 py-2 rounded font-bold hover:bg-green-500">=</button>
+                </div>
+            </div>
+
+            <!-- ENHANCED MATRIX MODE (any dimensions) -->
+            <div id="mode-matrix" class="hidden-mode glass-panel rounded-2xl p-6 flex flex-col h-[32rem]">
+                <h3 class="text-xl font-bold mb-2 text-orange-400">Matrix Operations</h3>
+                
+                <div class="flex gap-2 mb-4">
+                    <select id="mat-op" onchange="matrixOpChanged()" class="bg-slate-800 rounded px-3 py-2 text-white flex-1">
+                        <option value="det">Determinant</option>
+                        <option value="inv">Inverse</option>
+                        <option value="trans">Transpose</option>
+                        <option value="add">A + B</option>
+                        <option value="mul">A × B</option>
+                    </select>
+                </div>
+
+                <!-- Matrix A dimension controls -->
+                <div class="flex items-center gap-4 mb-2">
+                    <span class="text-sm text-orange-300">Matrix A</span>
+                    <label class="text-xs">Rows</label>
+                    <input type="number" id="mat-a-rows" min="1" max="5" value="2" class="bg-slate-800 w-14 p-1 rounded text-center text-white" onchange="rebuildMatrixInputs()">
+                    <label class="text-xs">Cols</label>
+                    <input type="number" id="mat-a-cols" min="1" max="5" value="2" class="bg-slate-800 w-14 p-1 rounded text-center text-white" onchange="rebuildMatrixInputs()">
+                </div>
+
+                <!-- Matrix A input grid -->
+                <div id="mat-a-container" class="bg-slate-900/50 p-3 rounded mb-3">
+                    <div id="mat-a-inputs" class="grid gap-2" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+                        <input type="number" class="mat-a bg-slate-800 p-2 rounded text-center" value="1">
+                        <input type="number" class="mat-a bg-slate-800 p-2 rounded text-center" value="2">
+                        <input type="number" class="mat-a bg-slate-800 p-2 rounded text-center" value="3">
+                        <input type="number" class="mat-a bg-slate-800 p-2 rounded text-center" value="4">
+                    </div>
+                </div>
+
+                <!-- Matrix B container (hidden if op does not require B) -->
+                <div id="mat-b-section" class="hidden">
+                    <div class="flex items-center gap-4 mb-2">
+                        <span class="text-sm text-orange-300">Matrix B</span>
+                        <label class="text-xs">Rows</label>
+                        <input type="number" id="mat-b-rows" min="1" max="5" value="2" class="bg-slate-800 w-14 p-1 rounded text-center text-white" onchange="rebuildMatrixInputs()">
+                        <label class="text-xs">Cols</label>
+                        <input type="number" id="mat-b-cols" min="1" max="5" value="2" class="bg-slate-800 w-14 p-1 rounded text-center text-white" onchange="rebuildMatrixInputs()">
+                    </div>
+                    <div id="mat-b-container" class="bg-slate-900/50 p-3 rounded mb-3">
+                        <div id="mat-b-inputs" class="grid gap-2" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+                            <input type="number" class="mat-b bg-slate-800 p-2 rounded text-center" value="1">
+                            <input type="number" class="mat-b bg-slate-800 p-2 rounded text-center" value="0">
+                            <input type="number" class="mat-b bg-slate-800 p-2 rounded text-center" value="0">
+                            <input type="number" class="mat-b bg-slate-800 p-2 rounded text-center" value="1">
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="calculateMatrix()" class="w-full bg-orange-600 py-3 rounded font-bold hover:bg-orange-500 mb-4">Calculate</button>
+
+                <div id="mat-result" class="flex-1 bg-slate-900 rounded border border-orange-700 p-3 overflow-auto font-mono text-sm">
+                    Result will appear here
+                </div>
+            </div>
+
+            <!-- CONVERT Mode -->
+            <div id="mode-convert" class="hidden-mode glass-panel rounded-2xl p-6 flex flex-col h-96">
+                <h3 class="text-xl font-bold mb-4 text-teal-400">Unit Converter</h3>
+                
+                <div class="flex gap-2 mb-4">
+                    <select id="conv-category" onchange="updateConvUnits()" class="bg-slate-800 rounded px-3 py-2 text-white flex-1">
+                        <option value="length">Length</option>
+                        <option value="mass">Mass</option>
+                        <option value="temp">Temperature</option>
+                        <option value="speed">Speed</option>
+                        <option value="data">Data Size</option>
+                        <option value="time">Time</option>
+                        <option value="volume">Volume</option>
+                    </select>
+                </div>
+                
+                <div class="flex items-center gap-2 mb-4">
+                    <input type="number" id="conv-input" class="bg-slate-800 rounded px-3 py-2 w-24 text-white" value="1" oninput="performConversion()">
+                    <select id="conv-from" class="bg-slate-800 rounded px-2 py-2 text-white text-sm flex-1" onchange="performConversion()"></select>
+                </div>
+                
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="text-slate-400 font-bold text-xl">=</div>
+                    <div id="conv-result" class="bg-slate-900 rounded px-3 py-2 flex-1 text-teal-300 font-bold calc-font text-lg">...</div>
+                    <select id="conv-to" class="bg-slate-800 rounded px-2 py-2 text-white text-sm flex-1" onchange="performConversion()"></select>
+                </div>
+
+                <button onclick="swapConvUnits()" class="w-full bg-slate-700 py-2 rounded font-bold hover:bg-slate-600 mb-4">⇄ Swap Units</button>
+                
+                <div class="mt-2 text-xs text-slate-400">
+                    <p class="font-bold mb-2">Quick Reference:</p>
+                    <ul class="space-y-1 text-slate-300" id="conv-quick">
+                        <li>1 m = 3.281 ft</li>
+                        <li>1 kg = 2.205 lb</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- SOLVER Mode -->
+            <div id="mode-solver" class="hidden-mode glass-panel rounded-2xl p-6 flex flex-col h-96">
+                <h3 class="text-xl font-bold mb-4 text-green-400">Equation Solver</h3>
+                
+                <div class="flex gap-2 mb-4">
+                    <select id="solver-type" onchange="changeSolverType()" class="bg-slate-800 rounded px-3 py-2 text-white flex-1">
+                        <option value="linear">Linear: ax + b = c</option>
+                        <option value="quadratic">Quadratic: ax² + bx + c = 0</option>
+                        <option value="system2">System: 2 equations</option>
+                    </select>
+                </div>
+
+                <!-- Linear Solver -->
+                <div id="solver-linear" class="solver-inputs">
+                    <div class="grid grid-cols-3 gap-2 mb-2">
+                        <input type="number" id="sol-a" placeholder="a" class="bg-slate-800 p-2 rounded text-center" oninput="updateSolverDisplay()">
+                        <input type="number" id="sol-b" placeholder="b" class="bg-slate-800 p-2 rounded text-center" oninput="updateSolverDisplay()">
+                        <input type="number" id="sol-c" placeholder="c" class="bg-slate-800 p-2 rounded text-center" oninput="updateSolverDisplay()">
+                    </div>
+                    <div class="text-center text-lg mb-2 font-mono bg-slate-800 p-2 rounded">
+                        <span id="disp-a">a</span>x + <span id="disp-b">b</span> = <span id="disp-c">c</span>
+                    </div>
+                </div>
+
+                <!-- Quadratic Solver -->
+                <div id="solver-quadratic" class="solver-inputs hidden">
+                    <div class="grid grid-cols-3 gap-2 mb-2">
+                        <input type="number" id="quad-a" placeholder="a" class="bg-slate-800 p-2 rounded text-center">
+                        <input type="number" id="quad-b" placeholder="b" class="bg-slate-800 p-2 rounded text-center">
+                        <input type="number" id="quad-c" placeholder="c" class="bg-slate-800 p-2 rounded text-center">
+                    </div>
+                    <div class="text-center text-lg mb-2 font-mono bg-slate-800 p-2 rounded">
+                        <span id="quad-disp">ax² + bx + c = 0</span>
+                    </div>
+                </div>
+
+                <!-- System Solver -->
+                <div id="solver-system2" class="solver-inputs hidden">
+                    <div class="text-xs text-slate-400 mb-2">Equation 1: ax + by = c</div>
+                    <div class="grid grid-cols-3 gap-2 mb-2">
+                        <input type="number" id="sys-a1" placeholder="a₁" class="bg-slate-800 p-2 rounded text-center">
+                        <input type="number" id="sys-b1" placeholder="b₁" class="bg-slate-800 p-2 rounded text-center">
+                        <input type="number" id="sys-c1" placeholder="c₁" class="bg-slate-800 p-2 rounded text-center">
+                    </div>
+                    <div class="text-xs text-slate-400 mb-2">Equation 2: dx + ey = f</div>
+                    <div class="grid grid-cols-3 gap-2 mb-2">
+                        <input type="number" id="sys-a2" placeholder="a₂" class="bg-slate-800 p-2 rounded text-center">
+                        <input type="number" id="sys-b2" placeholder="b₂" class="bg-slate-800 p-2 rounded text-center">
+                        <input type="number" id="sys-c2" placeholder="c₂" class="bg-slate-800 p-2 rounded text-center">
+                    </div>
+                </div>
+
+                <button onclick="solveEquation()" class="w-full bg-green-600 py-2 rounded font-bold hover:bg-green-500 mb-4">Solve</button>
+                
+                <div id="solver-result" class="flex-1 bg-slate-900 rounded border border-slate-700 flex items-center justify-center text-xl font-bold text-white overflow-auto p-2">
+                    Enter values to solve
+                </div>
+            </div>
+
+            <!-- STATS Mode -->
+            <div id="mode-stats" class="hidden-mode glass-panel rounded-2xl p-6 flex flex-col h-96">
+                <h3 class="text-xl font-bold mb-4 text-purple-400">Statistics Calculator</h3>
+                <div class="flex gap-2 mb-4">
+                    <input type="number" id="stat-input" placeholder="Enter data point..." class="bg-slate-800 border border-slate-600 rounded px-3 py-2 flex-1 text-white outline-none">
+                    <button onclick="addStatData()" class="bg-purple-600 px-4 py-2 rounded font-bold hover:bg-purple-500">Add</button>
+                    <button onclick="clearStatData()" class="bg-red-600 px-4 py-2 rounded font-bold hover:bg-red-500">Clr</button>
+                </div>
+                <div class="flex gap-4 h-full">
+                    <div class="w-1/2 bg-slate-900 rounded border border-slate-700 p-2 overflow-y-auto">
+                        <div class="text-xs text-slate-500 mb-1">Data: <span id="stat-n">0</span> points</div>
+                        <div id="stat-list" class="calc-font text-sm flex flex-wrap gap-2"></div>
+                    </div>
+                    <div class="w-1/2 flex flex-col gap-2 justify-center text-xs">
+                        <div class="bg-slate-800 p-2 rounded flex justify-between"><span>Sum</span> <span id="stat-sum" class="font-bold text-white">0</span></div>
+                        <div class="bg-slate-800 p-2 rounded flex justify-between"><span>Mean</span> <span id="stat-mean" class="font-bold text-yellow-400">0</span></div>
+                        <div class="bg-slate-800 p-2 rounded flex justify-between"><span>Median</span> <span id="stat-median" class="font-bold text-white">0</span></div>
+                        <div class="bg-slate-800 p-2 rounded flex justify-between"><span>Mode</span> <span id="stat-mode" class="font-bold text-white">-</span></div>
+                        <div class="bg-slate-800 p-2 rounded flex justify-between"><span>Std Dev</span> <span id="stat-std" class="font-bold text-blue-400">0</span></div>
+                        <div class="bg-slate-800 p-2 rounded flex justify-between"><span>Variance</span> <span id="stat-var" class="font-bold text-white">0</span></div>
+                        <div class="bg-slate-800 p-2 rounded flex justify-between"><span>Min</span> <span id="stat-min" class="font-bold text-green-400">0</span></div>
+                        <div class="bg-slate-800 p-2 rounded flex justify-between"><span>Max</span> <span id="stat-max" class="font-bold text-red-400">0</span></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Side: History, Steps, and QR Installer -->
+        <div class="w-full md:w-80 flex flex-col gap-4">
+            
+            <!-- ========== NEW QR INSTALLER PANEL ========== -->
+            <div class="glass-panel rounded-2xl p-4 flex flex-col items-center">
+                <div class="flex justify-between items-center w-full mb-2">
+                    <h3 class="font-bold text-cyan-400 text-sm">📱 Install on any device</h3>
+                    <span class="text-xs text-slate-400">Scan QR</span>
+                </div>
+                <div id="qr-container" class="bg-white p-2 rounded-lg flex flex-col items-center w-full">
+                    <!-- QR code will be injected here -->
+                    <div id="qr-code" class="flex justify-center items-center bg-white p-1 rounded w-full min-h-[160px]">
+                        <div class="text-slate-800 text-sm text-center p-2">
+                            ⚡ Host this page and refresh<br>QR will auto‑generate
+                        </div>
+                    </div>
+                    <div id="qr-url" class="text-xs text-slate-600 bg-slate-100 w-full p-1 mt-1 rounded truncate">
+                        file:// (not shareable)
+                    </div>
+                </div>
+                <button onclick="generateInstallQR()" class="mt-2 bg-cyan-600 hover:bg-cyan-500 text-xs px-3 py-1 rounded font-bold w-full">
+                    🔄 Regenerate QR
+                </button>
+            </div>
+
+            <!-- Step-by-Step Panel -->
+            <div id="step-panel" class="glass-panel rounded-2xl p-4 flex flex-col h-64 hidden">
+                <div class="flex justify-between items-center mb-2 border-b border-slate-700 pb-2">
+                    <h3 class="font-bold text-blue-400">Step-by-Step</h3>
+                    <button onclick="toggleSteps()" class="text-xs text-slate-400 hover:text-white">Hide</button>
+                </div>
+                <div id="step-content" class="flex-1 overflow-y-auto text-xs font-mono space-y-2 pr-2">
+                    <div class="text-slate-500">Enable STEP mode to see detailed solutions</div>
+                </div>
+            </div>
+
+            <!-- History Panel -->
+            <div class="glass-panel rounded-2xl p-4 flex flex-col h-64 md:flex-1">
+                <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
+                    <h3 class="font-bold text-slate-300">History</h3>
+                    <button onclick="clearHistory()" class="text-xs text-red-400 hover:text-red-300">Clear</button>
+                </div>
+                <div id="history-log" class="flex-1 overflow-y-auto flex flex-col gap-3 calc-font text-sm pr-2">
+                    <div class="text-slate-500 text-center italic mt-10">No calculations yet</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ==================== ULTIMATE CALCULATOR ENGINE ====================
+        
+        class UltimateCalculator {
+            constructor() {
+                this.operators = {
+                    '+': { precedence: 1, associativity: 'left', fn: (a, b) => this.fixFloat(a + b) },
+                    '-': { precedence: 1, associativity: 'left', fn: (a, b) => this.fixFloat(a - b) },
+                    '*': { precedence: 2, associativity: 'left', fn: (a, b) => this.fixFloat(a * b) },
+                    '/': { precedence: 2, associativity: 'left', fn: (a, b) => b === 0 ? NaN : this.fixFloat(a / b) },
+                    '^': { precedence: 3, associativity: 'right', fn: (a, b) => this.fixFloat(Math.pow(a, b)) }
+                };
+                this.functions = {
+                    'sin': (x) => Math.sin(this.toRad(x)),
+                    'cos': (x) => Math.cos(this.toRad(x)),
+                    'tan': (x) => Math.tan(this.toRad(x)),
+                    'asin': (x) => this.toDeg(Math.asin(x)),
+                    'acos': (x) => this.toDeg(Math.acos(x)),
+                    'atan': (x) => this.toDeg(Math.atan(x)),
+                    'log': (x) => Math.log10(x),
+                    'ln': (x) => Math.log(x),
+                    'sqrt': (x) => Math.sqrt(x),
+                    'abs': (x) => Math.abs(x),
+                    'fact': (x) => this.factorial(x)
+                };
+                this.constants = { 'pi': Math.PI, 'e': Math.E };
+                this.angleMode = 'DEG';
+                this.stepMode = false;
+                this.steps = [];
+            }
+
+            toRad(deg) { return this.angleMode === 'DEG' ? deg * Math.PI / 180 : deg; }
+            toDeg(rad) { return this.angleMode === 'DEG' ? rad * 180 / Math.PI : rad; }
+
+            fixFloat(num) {
+                if (isNaN(num) || !isFinite(num)) return num;
+                return Math.round(num * 1e12) / 1e12;
+            }
+
+            factorial(n) {
+                if (n < 0 || !Number.isInteger(n)) return NaN;
+                if (n === 0 || n === 1) return 1;
+                let result = 1;
+                for (let i = 2; i <= n; i++) result *= i;
+                return result;
+            }
+
+            addStep(description, math) {
+                if (this.stepMode) {
+                    this.steps.push({ desc: description, math: math });
+                }
+            }
+
+            tokenize(expression) {
+                this.steps = [];
+                this.addStep("Original expression", expression);
+                
+                const tokens = [];
+                let current = '';
+                let i = 0;
+                
+                const isOperator = (c) => '+-*/^()'.includes(c);
+                const isDigit = (c) => /[0-9.]/.test(c);
+                const isLetter = (c) => /[a-zA-Z]/.test(c);
+
+                while (i < expression.length) {
+                    const char = expression[i];
+                    if (char === ' ') { i++; continue; }
+
+                    if (isDigit(char)) {
+                        current = '';
+                        while (i < expression.length && (isDigit(expression[i]) || expression[i] === 'e' || expression[i] === 'E')) {
+                            if ((expression[i] === 'e' || expression[i] === 'E') && 
+                                (expression[i+1] === '+' || expression[i+1] === '-' || isDigit(expression[i+1]))) {
+                                current += expression[i++];
+                                current += expression[i++];
+                            } else {
+                                current += expression[i++];
+                            }
+                        }
+                        tokens.push({ type: 'number', value: parseFloat(current) });
+                    } else if (isLetter(char)) {
+                        current = '';
+                        while (i < expression.length && isLetter(expression[i])) current += expression[i++];
+                        if (this.functions[current.toLowerCase()]) {
+                            tokens.push({ type: 'function', value: current.toLowerCase() });
+                        } else if (this.constants[current.toLowerCase()]) {
+                            tokens.push({ type: 'number', value: this.constants[current.toLowerCase()] });
+                        } else {
+                            throw new Error(`Unknown: ${current}`);
+                        }
+                    } else if (isOperator(char)) {
+                        tokens.push({ type: 'operator', value: char });
+                        i++;
+                    } else {
+                        throw new Error(`Invalid character: ${char}`);
+                    }
+                }
+                return tokens;
+            }
+
+            toRPN(tokens) {
+                this.addStep("Converting to postfix (RPN)", "");
+                const output = [];
+                const stack = [];
+                
+                for (let token of tokens) {
+                    if (token.type === 'number') {
+                        output.push(token);
+                    } else if (token.type === 'function') {
+                        stack.push(token);
+                    } else if (token.type === 'operator') {
+                        const o1 = token;
+                        while (stack.length > 0) {
+                            const o2 = stack[stack.length - 1];
+                            if (o2.type === 'operator' &&
+                                ((o1.associativity === 'left' && o1.precedence <= o2.precedence) ||
+                                 (o1.associativity === 'right' && o1.precedence < o2.precedence))) {
+                                output.push(stack.pop());
+                            } else {
+                                break;
+                            }
+                        }
+                        stack.push(o1);
+                    } else if (token.value === '(') {
+                        stack.push(token);
+                    } else if (token.value === ')') {
+                        while (stack.length > 0 && stack[stack.length - 1].value !== '(') {
+                            output.push(stack.pop());
+                        }
+                        if (stack.length === 0) throw new Error('Mismatched parentheses');
+                        stack.pop();
+                        if (stack.length > 0 && stack[stack.length - 1].type === 'function') {
+                            output.push(stack.pop());
+                        }
+                    }
+                }
+
+                while (stack.length > 0) {
+                    const token = stack.pop();
+                    if (token.value === '(' || token.value === ')') {
+                        throw new Error('Mismatched parentheses');
+                    }
+                    output.push(token);
+                }
+
+                const rpnString = output.map(t => t.value).join(' ');
+                this.addStep("Postfix notation", rpnString);
+                return output;
+            }
+
+            evaluateRPN(rpn) {
+                this.addStep("Evaluating step by step", "");
+                const stack = [];
+                let stepNum = 1;
+                
+                for (let token of rpn) {
+                    if (token.type === 'number') {
+                        stack.push(token.value);
+                    } else if (token.type === 'operator') {
+                        if (stack.length < 2) throw new Error('Invalid expression');
+                        const b = stack.pop();
+                        const a = stack.pop();
+                        const result = this.operators[token.value].fn(a, b);
+                        if (isNaN(result)) throw new Error('Math error');
+                        this.addStep(`Step ${stepNum++}: ${a} ${token.value} ${b}`, `= ${result}`);
+                        stack.push(result);
+                    } else if (token.type === 'function') {
+                        if (stack.length < 1) throw new Error('Invalid expression');
+                        const a = stack.pop();
+                        const result = this.functions[token.value](a);
+                        if (isNaN(result)) throw new Error('Math error');
+                        this.addStep(`Step ${stepNum++}: ${token.value}(${a})`, `= ${result}`);
+                        stack.push(result);
+                    }
+                }
+
+                if (stack.length !== 1) throw new Error('Invalid expression');
+                return stack[0];
+            }
+
+            calculate(expression) {
+                try {
+                    const tokens = this.tokenize(expression);
+                    const rpn = this.toRPN(tokens);
+                    const result = this.evaluateRPN(rpn);
+                    this.addStep("Final result", result);
+                    return result;
+                } catch (e) {
+                    throw e;
+                }
+            }
+
+            setStepMode(enabled) { this.stepMode = enabled; }
+            getSteps() { return this.steps; }
+            setAngleMode(mode) { this.angleMode = mode; }
+        }
+
+        // ==================== FRACTION CLASS ====================
+        class Fraction {
+            constructor(numerator, denominator, whole = 0) {
+                this.n = numerator;
+                this.d = denominator;
+                this.w = whole;
+                this.simplify();
+            }
+
+            gcd(a, b) { return b ? this.gcd(b, a % b) : a; }
+
+            simplify() {
+                if (this.w !== 0) {
+                    this.n = this.w * this.d + (this.w < 0 ? -Math.abs(this.n) : Math.abs(this.n));
+                    this.w = 0;
+                }
+                const g = this.gcd(Math.abs(this.n), Math.abs(this.d));
+                this.n /= g;
+                this.d /= g;
+                if (this.d < 0) { this.n *= -1; this.d *= -1; }
+            }
+
+            toString() {
+                if (this.d === 1) return `${this.n}`;
+                const whole = Math.floor(Math.abs(this.n) / this.d);
+                const rem = Math.abs(this.n) % this.d;
+                if (whole === 0) return `${this.n}/${this.d}`;
+                const sign = this.n < 0 ? '-' : '';
+                return rem === 0 ? `${sign}${whole}` : `${sign}${whole} ${rem}/${this.d}`;
+            }
+
+            toImproperString() { return `${this.n}/${this.d}`; }
+            toDecimal() { return this.n / this.d; }
+
+            static add(a, b) { return new Fraction(a.n * b.d + b.n * a.d, a.d * b.d); }
+            static subtract(a, b) { return new Fraction(a.n * b.d - b.n * a.d, a.d * b.d); }
+            static multiply(a, b) { return new Fraction(a.n * b.n, a.d * b.d); }
+            static divide(a, b) { return new Fraction(a.n * b.d, a.d * b.n); }
+        }
+
+        // ==================== COMPLEX NUMBER CLASS ====================
+        class Complex {
+            constructor(real, imag) {
+                this.r = real;
+                this.i = imag;
+            }
+
+            add(c) { return new Complex(this.r + c.r, this.i + c.i); }
+            sub(c) { return new Complex(this.r - c.r, this.i - c.i); }
+            mul(c) {
+                return new Complex(
+                    this.r * c.r - this.i * c.i,
+                    this.r * c.i + this.i * c.r
+                );
+            }
+            div(c) {
+                const denom = c.r * c.r + c.i * c.i;
+                return new Complex(
+                    (this.r * c.r + this.i * c.i) / denom,
+                    (this.i * c.r - this.r * c.i) / denom
+                );
+            }
+            conj() { return new Complex(this.r, -this.i); }
+            mag() { return Math.sqrt(this.r * this.r + this.i * this.i); }
+            arg() { return Math.atan2(this.i, this.r) * 180 / Math.PI; }
+            
+            toString() {
+                if (Math.abs(this.i) < 1e-10) return `${this.r.toFixed(4)}`;
+                if (Math.abs(this.r) < 1e-10) return `${this.i.toFixed(4)}i`;
+                const sign = this.i >= 0 ? '+' : '-';
+                return `${this.r.toFixed(4)} ${sign} ${Math.abs(this.i).toFixed(4)}i`;
+            }
+
+            toPolarString() {
+                const r = this.mag();
+                const theta = this.arg();
+                return `${r.toFixed(4)}∠${theta.toFixed(2)}°`;
+            }
+        }
+
+        // ==================== MATRIX OPERATIONS (supports any size) ====================
+        class Matrix {
+            constructor(data) {
+                this.data = data;
+                this.rows = data.length;
+                this.cols = data[0].length;
+            }
+
+            static fromInputs(inputs, rows, cols) {
+                const data = [];
+                for (let i = 0; i < rows; i++) {
+                    const row = [];
+                    for (let j = 0; j < cols; j++) {
+                        row.push(parseFloat(inputs[i * cols + j].value) || 0);
+                    }
+                    data.push(row);
+                }
+                return new Matrix(data);
+            }
+
+            determinant() {
+                if (this.rows !== this.cols) return NaN;
+                if (this.rows === 2) {
+                    return this.data[0][0] * this.data[1][1] - this.data[0][1] * this.data[1][0];
+                }
+                if (this.rows === 3) {
+                    const [[a,b,c],[d,e,f],[g,h,i]] = this.data;
+                    return a*(e*i-f*h) - b*(d*i-f*g) + c*(d*h-e*g);
+                }
+                return null; // not implemented for other sizes
+            }
+
+            inverse() {
+                if (this.rows !== this.cols) return null;
+                const det = this.determinant();
+                if (Math.abs(det) < 1e-10) return null;
+                if (this.rows === 2) {
+                    const [[a,b],[c,d]] = this.data;
+                    return new Matrix([[d/det, -b/det], [-c/det, a/det]]);
+                }
+                return null;
+            }
+
+            transpose() {
+                const result = [];
+                for (let j = 0; j < this.cols; j++) {
+                    const row = [];
+                    for (let i = 0; i < this.rows; i++) {
+                        row.push(this.data[i][j]);
+                    }
+                    result.push(row);
+                }
+                return new Matrix(result);
+            }
+
+            add(m) {
+                if (this.rows !== m.rows || this.cols !== m.cols) return null;
+                const result = [];
+                for (let i = 0; i < this.rows; i++) {
+                    const row = [];
+                    for (let j = 0; j < this.cols; j++) {
+                        row.push(this.data[i][j] + m.data[i][j]);
+                    }
+                    result.push(row);
+                }
+                return new Matrix(result);
+            }
+
+            multiply(m) {
+                if (this.cols !== m.rows) return null;
+                const result = [];
+                for (let i = 0; i < this.rows; i++) {
+                    const row = [];
+                    for (let j = 0; j < m.cols; j++) {
+                        let sum = 0;
+                        for (let k = 0; k < this.cols; k++) {
+                            sum += this.data[i][k] * m.data[k][j];
+                        }
+                        row.push(sum);
+                    }
+                    result.push(row);
+                }
+                return new Matrix(result);
+            }
+
+            toString() {
+                return this.data.map(row => 
+                    row.map(x => x.toFixed(4).replace(/\.?0+$/, '')).join('  ')
+                ).join('\n');
+            }
+        }
+
+        // ==================== APP STATE ====================
+        
+        const calc = new UltimateCalculator();
+        let currentExpression = '';
+        let historyStack = [];
+        let fullHistory = [];
+        let memory = 0;
+        let statData = [];
+        let alphaMode = false;
+        let fractions = [];
+        let currentBase = 'DEC';
+        let progAccumulator = null;
+        let progOperation = null;
+
+        const displayEl = document.getElementById('calc-input');
+        const multiviewEl = document.getElementById('multiview-lines');
+        const historyEl = document.getElementById('history-log');
+        const stepPanel = document.getElementById('step-panel');
+        const stepContent = document.getElementById('step-content');
+
+        // ==================== MODE SWITCHING ====================
+
+        function setMode(mode) {
+            document.querySelectorAll('.mode-panel').forEach(el => {
+                el.classList.add('hidden-mode');
+                el.classList.remove('flex');
+            });
+            
+            const selected = document.getElementById(`mode-${mode}`);
+            if (selected) {
+                selected.classList.remove('hidden-mode');
+                selected.classList.add('flex');
+            }
+
+            document.querySelectorAll('[id^="btn-mode-"]').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'shadow-lg');
+                btn.classList.add('bg-slate-700');
+            });
+            const activeBtn = document.getElementById(`btn-mode-${mode}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-700');
+                activeBtn.classList.add('bg-blue-600', 'shadow-lg');
+            }
+
+            if (mode === 'matrix') {
+                rebuildMatrixInputs();
+                matrixOpChanged();
+            }
+        }
+
+        // ==================== ALPHA MODE ====================
+
+        function toggleAlpha() {
+            alphaMode = !alphaMode;
+            const btn = document.getElementById('btn-alpha');
+            const indicator = document.getElementById('ind-alpha');
+            
+            if (alphaMode) {
+                btn.classList.add('alpha-mode');
+                indicator.classList.remove('opacity-0');
+                multiviewEl.innerHTML = '<div class="text-purple-400">ALPHA MODE: 0=Space, 1=A, 2=B...</div>';
+            } else {
+                btn.classList.remove('alpha-mode');
+                indicator.classList.add('opacity-0');
+                multiviewEl.innerHTML = '<div class="text-slate-400">Alpha Mode Off</div>';
+            }
+        }
+
+        function handleInput(key) {
+            if (alphaMode) {
+                const alphaMap = {
+                    '0': ' ', '1': 'A', '2': 'B', '3': 'C', '4': 'D',
+                    '5': 'E', '6': 'F', '7': 'G', '8': 'H', '9': 'I', '.': ','
+                };
+                currentExpression += alphaMap[key] || key;
+            } else {
+                if (currentExpression === 'Error') currentExpression = '';
+                currentExpression += key;
+            }
+            updateDisplay();
+        }
+
+        // ==================== STEP-BY-STEP MODE ====================
+
+        function toggleSteps() {
+            calc.setStepMode(!calc.stepMode);
+            const indicator = document.getElementById('ind-step');
+            const btn = document.getElementById('btn-step');
+            
+            if (calc.stepMode) {
+                indicator.classList.remove('opacity-0');
+                btn.classList.add('bg-blue-500');
+                stepPanel.classList.remove('hidden');
+                stepContent.innerHTML = '<div class="text-slate-500">STEP mode ON - Calculations will show detailed steps</div>';
+            } else {
+                indicator.classList.add('opacity-0');
+                btn.classList.remove('bg-blue-500');
+                stepPanel.classList.add('hidden');
+            }
+        }
+
+        function displaySteps() {
+            if (!calc.stepMode || calc.getSteps().length === 0) return;
+            
+            stepContent.innerHTML = calc.getSteps().map((step, i) => `
+                <div class="step-box">
+                    <div class="text-slate-400 text-xs">${step.desc}</div>
+                    <div class="text-white font-mono">${step.math}</div>
+                </div>
+            `).join('');
+            
+            stepPanel.classList.remove('hidden');
+        }
+
+        // ==================== BASIC CALCULATOR FUNCTIONS ====================
+
+        function setAngleMode(mode) {
+            calc.setAngleMode(mode);
+            document.getElementById('ind-angle').innerText = mode;
+            
+            ['deg', 'rad'].forEach(m => {
+                const btn = document.getElementById(`btn-${m}`);
+                if (m === mode.toLowerCase()) {
+                    btn.classList.add('angle-active', 'bg-emerald-600');
+                    btn.classList.remove('bg-slate-700');
+                } else {
+                    btn.classList.remove('angle-active', 'bg-emerald-600');
+                    btn.classList.add('bg-slate-700');
+                }
+            });
+        }
+
+        function handleOp(op) {
+            if (alphaMode) return;
+            if (currentExpression === 'Error') currentExpression = '';
+            const lastChar = currentExpression.slice(-1);
+            if ('+-*/^'.includes(lastChar) && '+-*/^'.includes(op)) {
+                currentExpression = currentExpression.slice(0, -1) + op;
+            } else {
+                currentExpression += op;
+            }
+            updateDisplay();
+        }
+
+        function insertFunction(func) {
+            if (alphaMode) return;
+            if (func === 'pow') {
+                handleOp('^');
+            } else {
+                currentExpression += func + '(';
+            }
+            updateDisplay();
+        }
+
+        function backspace() {
+            if (currentExpression === 'Error') {
+                currentExpression = '';
+            } else if (currentExpression.length > 0) {
+                currentExpression = currentExpression.slice(0, -1);
+            }
+            updateDisplay();
+        }
+
+        function toggleSign() {
+            if (alphaMode) return;
+            if (currentExpression === '0' || currentExpression === '' || currentExpression === 'Error') {
+                currentExpression = '-';
+            } else {
+                const match = currentExpression.match(/-?\d+\.?\d*$/);
+                if (match) {
+                    const num = match[0];
+                    const newNum = num.startsWith('-') ? num.substring(1) : '-' + num;
+                    currentExpression = currentExpression.slice(0, -num.length) + newNum;
+                } else {
+                    currentExpression = '-' + currentExpression;
+                }
+            }
+            updateDisplay();
+        }
+
+        function clearAll() {
+            currentExpression = '';
+            calc.setStepMode(false);
+            document.getElementById('ind-step').classList.add('opacity-0');
+            stepPanel.classList.add('hidden');
+            updateDisplay();
+        }
+
+        function calculate() {
+            if (!currentExpression || alphaMode) return;
+            
+            try {
+                const result = calc.calculate(currentExpression);
+                addToHistory(currentExpression, result);
+                updateMultiview(currentExpression, result);
+                
+                if (calc.stepMode) {
+                    displaySteps();
+                }
+                
+                currentExpression = result.toString();
+                updateDisplay();
+                showError(false);
+            } catch (e) {
+                showError(true);
+                currentExpression = 'Error';
+                updateDisplay();
+                setTimeout(() => {
+                    currentExpression = '';
+                    updateDisplay();
+                    showError(false);
+                }, 1500);
+            }
+        }
+
+        function showError(show) {
+            const errInd = document.getElementById('ind-error');
+            if (show) {
+                errInd.classList.remove('hidden');
+                displayEl.parentElement.classList.add('error-shake');
+                setTimeout(() => displayEl.parentElement.classList.remove('error-shake'), 500);
+            } else {
+                errInd.classList.add('hidden');
+            }
+        }
+
+        function updateDisplay() {
+            displayEl.value = currentExpression || '0';
+            displayEl.scrollLeft = displayEl.scrollWidth;
+        }
+
+        // ==================== MEMORY FUNCTIONS ====================
+
+        function memoryAdd() {
+            if (alphaMode) return;
+            try {
+                const val = calc.calculate(currentExpression || '0');
+                memory += val;
+                document.getElementById('ind-mem').style.opacity = memory !== 0 ? '1' : '0';
+            } catch(e) {
+                showError(true);
+            }
+        }
+
+        function memoryRecall() {
+            if (alphaMode) return;
+            currentExpression += memory.toString();
+            updateDisplay();
+        }
+
+        function memoryClear() {
+            memory = 0;
+            document.getElementById('ind-mem').style.opacity = '0';
+        }
+
+        // ==================== FRACTION MODE ====================
+
+        let fracMode = 'mixed';
+
+        function setFracMode(mode) {
+            fracMode = mode;
+            document.getElementById('frac-mixed').className = mode === 'mixed' ? 
+                'flex-1 bg-pink-600 py-2 rounded font-bold text-sm' : 
+                'flex-1 bg-slate-700 py-2 rounded font-bold text-sm';
+            document.getElementById('frac-improper').className = mode === 'improper' ? 
+                'flex-1 bg-pink-600 py-2 rounded font-bold text-sm' : 
+                'flex-1 bg-slate-700 py-2 rounded font-bold text-sm';
+            
+            document.getElementById('frac-mixed-input').classList.toggle('hidden', mode !== 'mixed');
+            document.getElementById('frac-improper-input').classList.toggle('hidden', mode !== 'improper');
+        }
+
+        function addFraction() {
+            let f;
+            if (fracMode === 'mixed') {
+                const w = parseInt(document.getElementById('frac-whole').value) || 0;
+                const n = parseInt(document.getElementById('frac-num').value) || 0;
+                const d = parseInt(document.getElementById('frac-den').value) || 1;
+                f = new Fraction(n, d, w);
+            } else {
+                const n = parseInt(document.getElementById('frac-imp-num').value) || 0;
+                const d = parseInt(document.getElementById('frac-imp-den').value) || 1;
+                f = new Fraction(n, d);
+            }
+            
+            fractions.push({ frac: f, op: fractions.length === 0 ? null : document.getElementById('frac-op').value });
+            renderFractionList();
+            
+            ['frac-whole', 'frac-num', 'frac-den', 'frac-imp-num', 'frac-imp-den'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+        }
+
+        function renderFractionList() {
+            const list = document.getElementById('frac-list');
+            if (fractions.length === 0) {
+                list.innerHTML = 'No fractions added';
+                return;
+            }
+            
+            list.innerHTML = fractions.map((f, i) => {
+                let str = f.frac.toString();
+                if (f.op && i > 0) str = f.op + ' ' + str;
+                return `<span class="inline-block bg-pink-900 px-2 py-1 rounded mr-2 mb-1">${str}</span>`;
+            }).join('');
+        }
+
+        function calculateFractions() {
+            if (fractions.length === 0) {
+                document.getElementById('frac-result').innerText = 'Add fractions first';
+                return;
+            }
+            
+            let result = fractions[0].frac;
+            for (let i = 1; i < fractions.length; i++) {
+                const { frac, op } = fractions[i];
+                switch(op) {
+                    case '+': result = Fraction.add(result, frac); break;
+                    case '-': result = Fraction.subtract(result, frac); break;
+                    case '*': result = Fraction.multiply(result, frac); break;
+                    case '/': result = Fraction.divide(result, frac); break;
+                }
+            }
+            
+            document.getElementById('frac-result').innerHTML = `
+                <div class="text-pink-300">${result.toString()}</div>
+                <div class="text-sm text-slate-400">= ${result.toDecimal().toFixed(6)}</div>
+            `;
+        }
+
+        function clearFractions() {
+            fractions = [];
+            renderFractionList();
+            document.getElementById('frac-result').innerText = '';
+        }
+
+        // ==================== COMPLEX MODE ====================
+
+        function complexOp(operation) {
+            const z1 = new Complex(
+                parseFloat(document.getElementById('cplx1-real').value) || 0,
+                parseFloat(document.getElementById('cplx1-imag').value) || 0
+            );
+            
+            let result;
+            let resultText = '';
+            
+            switch(operation) {
+                case 'add':
+                    const z2add = new Complex(
+                        parseFloat(document.getElementById('cplx2-real').value) || 0,
+                        parseFloat(document.getElementById('cplx2-imag').value) || 0
+                    );
+                    result = z1.add(z2add);
+                    resultText = `z₁ + z₂ = ${result.toString()}`;
+                    break;
+                case 'sub':
+                    const z2sub = new Complex(
+                        parseFloat(document.getElementById('cplx2-real').value) || 0,
+                        parseFloat(document.getElementById('cplx2-imag').value) || 0
+                    );
+                    result = z1.sub(z2sub);
+                    resultText = `z₁ − z₂ = ${result.toString()}`;
+                    break;
+                case 'mul':
+                    const z2mul = new Complex(
+                        parseFloat(document.getElementById('cplx2-real').value) || 0,
+                        parseFloat(document.getElementById('cplx2-imag').value) || 0
+                    );
+                    result = z1.mul(z2mul);
+                    resultText = `z₁ × z₂ = ${result.toString()}`;
+                    break;
+                case 'div':
+                    const z2div = new Complex(
+                        parseFloat(document.getElementById('cplx2-real').value) || 0,
+                        parseFloat(document.getElementById('cplx2-imag').value) || 0
+                    );
+                    if (z2div.mag() === 0) {
+                        resultText = 'Error: Division by zero';
+                    } else {
+                        result = z1.div(z2div);
+                        resultText = `z₁ ÷ z₂ = ${result.toString()}`;
+                    }
+                    break;
+                case 'conj':
+                    result = z1.conj();
+                    resultText = `z̄₁ = ${result.toString()}`;
+                    break;
+                case 'mag':
+                    resultText = `|z₁| = ${z1.mag().toFixed(6)}`;
+                    break;
+                case 'arg':
+                    resultText = `arg(z₁) = ${z1.arg().toFixed(2)}°`;
+                    break;
+                case 'polar':
+                    resultText = `Polar: ${z1.toPolarString()}<br>Rectangular: ${z1.toString()}`;
+                    break;
+            }
+            
+            document.getElementById('cplx-result').innerHTML = resultText;
+        }
+
+        // ==================== PROGRAMMER MODE ====================
+
+        function setBase(base) {
+            currentBase = base;
+            ['DEC','HEX','OCT','BIN'].forEach(b => {
+                const btn = document.getElementById(`base-${b.toLowerCase()}`);
+                if (b === base) {
+                    btn.classList.remove('bg-slate-700');
+                    btn.classList.add('bg-amber-600');
+                } else {
+                    btn.classList.remove('bg-amber-600');
+                    btn.classList.add('bg-slate-700');
+                }
+            });
+
+            document.querySelectorAll('.prog-hex').forEach(el => el.classList.toggle('hidden', base !== 'HEX'));
+            updateProgBases();
+        }
+
+        function progInput(digit) {
+            const input = document.getElementById('prog-input');
+            let val = input.value;
+            
+            const valid = {
+                'DEC': /^[0-9]$/,
+                'HEX': /^[0-9A-Fa-f]$/,
+                'OCT': /^[0-7]$/,
+                'BIN': /^[01]$/
+            };
+            
+            if (!valid[currentBase].test(digit)) return;
+            
+            input.value = val + digit;
+            updateProgBases();
+        }
+
+        function progOp(op) {
+            const input = document.getElementById('prog-input');
+            const val = input.value;
+            if (val === '') return;
+            
+            const num = parseInt(val, currentBase === 'HEX' ? 16 : currentBase === 'OCT' ? 8 : currentBase === 'BIN' ? 2 : 10);
+            if (isNaN(num)) return;
+            
+            if (progAccumulator === null) {
+                progAccumulator = num;
+            } else if (progOperation) {
+                const result = progOperation(progAccumulator, num);
+                progAccumulator = result;
+                input.value = result.toString(currentBase === 'HEX' ? 16 : currentBase === 'OCT' ? 8 : currentBase === 'BIN' ? 2 : 10).toUpperCase();
+            }
+            
+            progOperation = (a,b) => {
+                switch(op) {
+                    case 'AND': return a & b;
+                    case 'OR':  return a | b;
+                    case 'XOR': return a ^ b;
+                    case '<<':  return a << b;
+                    case '>>':  return a >> b;
+                    case 'NOT': return ~a;
+                    default: return b;
+                }
+            };
+            
+            if (op !== 'NOT') {
+                input.value = '';
+            } else {
+                const result = progOperation(progAccumulator, 0);
+                input.value = result.toString(currentBase === 'HEX' ? 16 : currentBase === 'OCT' ? 8 : currentBase === 'BIN' ? 2 : 10).toUpperCase();
+                progAccumulator = result;
+                progOperation = null;
+            }
+            updateProgBases();
+        }
+
+        function progClear() {
+            progAccumulator = null;
+            progOperation = null;
+            document.getElementById('prog-input').value = '';
+            updateProgBases();
+        }
+
+        function progCalc() {
+            const input = document.getElementById('prog-input');
+            if (progAccumulator !== null && progOperation && input.value !== '') {
+                const num = parseInt(input.value, currentBase === 'HEX' ? 16 : currentBase === 'OCT' ? 8 : currentBase === 'BIN' ? 2 : 10);
+                if (!isNaN(num)) {
+                    const result = progOperation(progAccumulator, num);
+                    input.value = result.toString(currentBase === 'HEX' ? 16 : currentBase === 'OCT' ? 8 : currentBase === 'BIN' ? 2 : 10).toUpperCase();
+                    progAccumulator = result;
+                    progOperation = null;
+                }
+            }
+            updateProgBases();
+        }
+
+        function updateProgBases() {
+            const input = document.getElementById('prog-input');
+            let val = input.value.trim();
+            if (val === '') val = '0';
+            
+            let decValue;
+            try {
+                decValue = parseInt(val, currentBase === 'HEX' ? 16 : currentBase === 'OCT' ? 8 : currentBase === 'BIN' ? 2 : 10);
+                if (isNaN(decValue)) decValue = 0;
+            } catch { decValue = 0; }
+            
+            document.getElementById('prog-dec').innerText = decValue;
+            document.getElementById('prog-hex').innerText = decValue.toString(16).toUpperCase();
+            document.getElementById('prog-oct').innerText = decValue.toString(8);
+            document.getElementById('prog-bin').innerText = decValue.toString(2);
+        }
+
+        // ==================== ENHANCED MATRIX MODE ====================
+
+        function matrixOpChanged() {
+            const op = document.getElementById('mat-op').value;
+            const bSection = document.getElementById('mat-b-section');
+            bSection.classList.toggle('hidden', !['add', 'mul'].includes(op));
+        }
+
+        function rebuildMatrixInputs() {
+            // A matrix
+            const aRows = parseInt(document.getElementById('mat-a-rows').value) || 2;
+            const aCols = parseInt(document.getElementById('mat-a-cols').value) || 2;
+            const aContainer = document.getElementById('mat-a-inputs');
+            aContainer.style.gridTemplateColumns = `repeat(${aCols}, minmax(0, 1fr))`;
+            
+            let aHtml = '';
+            for (let i = 0; i < aRows * aCols; i++) {
+                aHtml += `<input type="number" class="mat-a bg-slate-800 p-2 rounded text-center" value="${i+1}">`;
+            }
+            aContainer.innerHTML = aHtml;
+
+            // B matrix
+            const bRows = parseInt(document.getElementById('mat-b-rows').value) || 2;
+            const bCols = parseInt(document.getElementById('mat-b-cols').value) || 2;
+            const bContainer = document.getElementById('mat-b-inputs');
+            bContainer.style.gridTemplateColumns = `repeat(${bCols}, minmax(0, 1fr))`;
+            
+            let bHtml = '';
+            for (let i = 0; i < bRows * bCols; i++) {
+                bHtml += `<input type="number" class="mat-b bg-slate-800 p-2 rounded text-center" value="${i%2===0?1:0}">`;
+            }
+            bContainer.innerHTML = bHtml;
+        }
+
+        function calculateMatrix() {
+            const op = document.getElementById('mat-op').value;
+            
+            const aRows = parseInt(document.getElementById('mat-a-rows').value) || 2;
+            const aCols = parseInt(document.getElementById('mat-a-cols').value) || 2;
+            const aInputs = document.querySelectorAll('#mat-a-inputs .mat-a');
+            if (aInputs.length !== aRows * aCols) {
+                document.getElementById('mat-result').innerHTML = '<span class="text-red-400">Matrix A dimension mismatch. Please rebuild.</span>';
+                return;
+            }
+            const A = Matrix.fromInputs(aInputs, aRows, aCols);
+            
+            let result;
+            
+            if (op === 'det') {
+                if (aRows !== aCols) result = 'Determinant requires square matrix';
+                else {
+                    const det = A.determinant();
+                    if (det === null) result = 'Determinant only for 2x2 or 3x3';
+                    else result = `det(A) = ${det.toFixed(4)}`;
+                }
+            }
+            else if (op === 'inv') {
+                if (aRows !== aCols) result = 'Inverse requires square matrix';
+                else {
+                    const inv = A.inverse();
+                    if (inv === null) result = 'Matrix is singular or size not supported (only 2x2)';
+                    else result = inv.toString();
+                }
+            }
+            else if (op === 'trans') {
+                result = A.transpose().toString();
+            }
+            else if (op === 'add' || op === 'mul') {
+                const bRows = parseInt(document.getElementById('mat-b-rows').value) || 2;
+                const bCols = parseInt(document.getElementById('mat-b-cols').value) || 2;
+                const bInputs = document.querySelectorAll('#mat-b-inputs .mat-b');
+                if (bInputs.length !== bRows * bCols) {
+                    document.getElementById('mat-result').innerHTML = '<span class="text-red-400">Matrix B dimension mismatch. Please rebuild.</span>';
+                    return;
+                }
+                const B = Matrix.fromInputs(bInputs, bRows, bCols);
+                
+                if (op === 'add') {
+                    if (aRows !== bRows || aCols !== bCols) result = 'Matrices must have same dimensions for addition';
+                    else {
+                        const sum = A.add(B);
+                        result = sum ? sum.toString() : 'Error';
+                    }
+                } else { // mul
+                    if (aCols !== bRows) result = `Incompatible: A cols (${aCols}) ≠ B rows (${bRows})`;
+                    else {
+                        const prod = A.multiply(B);
+                        result = prod ? prod.toString() : 'Error';
+                    }
+                }
+            }
+            
+            document.getElementById('mat-result').innerHTML = `<pre class="text-orange-300 whitespace-pre-wrap">${result}</pre>`;
+        }
+
+        // ==================== CONVERTER MODE ====================
+
+        const unitData = {
+            length: { m:1, km:1000, cm:0.01, mm:0.001, mi:1609.344, ft:0.3048, in:0.0254, yd:0.9144 },
+            mass: { kg:1, g:0.001, mg:0.000001, lb:0.453592, oz:0.0283495, t:1000 },
+            temp: { '°C':'C', '°F':'F', 'K':'K' },
+            speed: { 'm/s':1, 'km/h':0.277778, 'mph':0.44704, 'knot':0.514444 },
+            data: { B:1, KB:1024, MB:1048576, GB:1073741824, TB:1099511627776 },
+            time: { s:1, ms:0.001, min:60, h:3600, d:86400 },
+            volume: { L:1, mL:0.001, gal:3.78541, qt:0.946353, pt:0.473176, cup:0.236588 }
+        };
+
+        function updateConvUnits() {
+            const cat = document.getElementById('conv-category').value;
+            const fromSel = document.getElementById('conv-from');
+            const toSel = document.getElementById('conv-to');
+            
+            if (cat === 'temp') {
+                fromSel.innerHTML = '<option value="°C">°C</option><option value="°F">°F</option><option value="K">K</option>';
+                toSel.innerHTML = '<option value="°C">°C</option><option value="°F">°F</option><option value="K">K</option>';
+            } else {
+                const units = Object.keys(unitData[cat]);
+                fromSel.innerHTML = units.map(u => `<option value="${u}">${u}</option>`).join('');
+                toSel.innerHTML = units.map(u => `<option value="${u}">${u}</option>`).join('');
+            }
+            performConversion();
+        }
+
+        function performConversion() {
+            const cat = document.getElementById('conv-category').value;
+            const val = parseFloat(document.getElementById('conv-input').value);
+            const from = document.getElementById('conv-from').value;
+            const to = document.getElementById('conv-to').value;
+            
+            if (isNaN(val)) { document.getElementById('conv-result').innerText = '...'; return; }
+            
+            if (cat === 'temp') {
+                let celsius;
+                if (from === '°C') celsius = val;
+                else if (from === '°F') celsius = (val - 32) * 5/9;
+                else celsius = val - 273.15;
+                
+                let result;
+                if (to === '°C') result = celsius;
+                else if (to === '°F') result = celsius * 9/5 + 32;
+                else result = celsius + 273.15;
+                
+                document.getElementById('conv-result').innerText = result.toFixed(4);
+            } else {
+                const factor = unitData[cat][to] / unitData[cat][from];
+                document.getElementById('conv-result').innerText = (val * factor).toFixed(6);
+            }
+        }
+
+        function swapConvUnits() {
+            const from = document.getElementById('conv-from');
+            const to = document.getElementById('conv-to');
+            [from.value, to.value] = [to.value, from.value];
+            performConversion();
+        }
+
+        // ==================== SOLVER MODE ====================
+
+        function changeSolverType() {
+            const type = document.getElementById('solver-type').value;
+            document.querySelectorAll('.solver-inputs').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`solver-${type}`).classList.remove('hidden');
+        }
+
+        function updateSolverDisplay() {
+            document.getElementById('disp-a').innerText = document.getElementById('sol-a').value || 'a';
+            document.getElementById('disp-b').innerText = document.getElementById('sol-b').value || 'b';
+            document.getElementById('disp-c').innerText = document.getElementById('sol-c').value || 'c';
+        }
+
+        function solveEquation() {
+            const type = document.getElementById('solver-type').value;
+            let result = '';
+            
+            if (type === 'linear') {
+                const a = parseFloat(document.getElementById('sol-a').value);
+                const b = parseFloat(document.getElementById('sol-b').value);
+                const c = parseFloat(document.getElementById('sol-c').value);
+                
+                if (a === 0) result = b === c ? 'Infinite solutions' : 'No solution';
+                else result = `x = ${((c - b)/a).toFixed(4)}`;
+            }
+            else if (type === 'quadratic') {
+                const a = parseFloat(document.getElementById('quad-a').value);
+                const b = parseFloat(document.getElementById('quad-b').value);
+                const c = parseFloat(document.getElementById('quad-c').value);
+                
+                if (a === 0) result = 'Not quadratic';
+                else {
+                    const d = b*b - 4*a*c;
+                    if (d < 0) result = `Complex: x = ${(-b/(2*a)).toFixed(4)} ± ${Math.sqrt(-d)/(2*a).toFixed(4)}i`;
+                    else if (d === 0) result = `x = ${(-b/(2*a)).toFixed(4)}`;
+                    else result = `x₁ = ${((-b + Math.sqrt(d))/(2*a)).toFixed(4)}, x₂ = ${((-b - Math.sqrt(d))/(2*a)).toFixed(4)}`;
+                }
+            }
+            else if (type === 'system2') {
+                const a1 = parseFloat(document.getElementById('sys-a1').value);
+                const b1 = parseFloat(document.getElementById('sys-b1').value);
+                const c1 = parseFloat(document.getElementById('sys-c1').value);
+                const a2 = parseFloat(document.getElementById('sys-a2').value);
+                const b2 = parseFloat(document.getElementById('sys-b2').value);
+                const c2 = parseFloat(document.getElementById('sys-c2').value);
+                
+                const det = a1*b2 - a2*b1;
+                if (det === 0) result = 'No unique solution';
+                else {
+                    const x = (c1*b2 - c2*b1) / det;
+                    const y = (a1*c2 - a2*c1) / det;
+                    result = `x = ${x.toFixed(4)}, y = ${y.toFixed(4)}`;
+                }
+            }
+            
+            document.getElementById('solver-result').innerText = result;
+        }
+
+        // ==================== STATISTICS MODE ====================
+
+        function addStatData() {
+            const input = document.getElementById('stat-input');
+            const val = parseFloat(input.value);
+            if (isNaN(val)) return;
+            statData.push(val);
+            input.value = '';
+            updateStats();
+        }
+
+        function clearStatData() {
+            statData = [];
+            updateStats();
+        }
+
+        function updateStats() {
+            const n = statData.length;
+            document.getElementById('stat-n').innerText = n;
+            document.getElementById('stat-list').innerHTML = statData.map((v,i) => 
+                `<span class="bg-purple-900 px-2 py-1 rounded text-xs">${v}</span>`
+            ).join('');
+            
+            if (n === 0) {
+                ['sum','mean','median','std','var','min','max'].forEach(id => 
+                    document.getElementById(`stat-${id}`).innerText = '0');
+                document.getElementById('stat-mode').innerText = '-';
+                return;
+            }
+            
+            const sum = statData.reduce((a,b)=>a+b,0);
+            const mean = sum / n;
+            const sorted = [...statData].sort((a,b)=>a-b);
+            const median = n%2===1 ? sorted[Math.floor(n/2)] : (sorted[n/2-1]+sorted[n/2])/2;
+            
+            const freq = {};
+            let maxFreq = 0, modes = [];
+            statData.forEach(v => { freq[v] = (freq[v]||0)+1; if(freq[v]>maxFreq) maxFreq=freq[v]; });
+            for(let v in freq) if(freq[v]===maxFreq) modes.push(v);
+            const modeStr = modes.length === n ? '-' : modes.join(',');
+            
+            const variance = statData.reduce((a,b)=>a+Math.pow(b-mean,2),0)/n;
+            const std = Math.sqrt(variance);
+            
+            document.getElementById('stat-sum').innerText = sum.toFixed(4);
+            document.getElementById('stat-mean').innerText = mean.toFixed(4);
+            document.getElementById('stat-median').innerText = median.toFixed(4);
+            document.getElementById('stat-mode').innerText = modeStr;
+            document.getElementById('stat-std').innerText = std.toFixed(4);
+            document.getElementById('stat-var').innerText = variance.toFixed(4);
+            document.getElementById('stat-min').innerText = sorted[0];
+            document.getElementById('stat-max').innerText = sorted[n-1];
+        }
+
+        // ==================== QR INSTALLER ====================
+
+        function generateInstallQR() {
+            const qrContainer = document.getElementById('qr-code');
+            const urlDisplay = document.getElementById('qr-url');
+            let currentUrl = window.location.href;
+            
+            // If it's a file:// URL, we can't generate a shareable QR
+            if (currentUrl.startsWith('file://')) {
+                qrContainer.innerHTML = '<div class="text-slate-800 text-sm text-center p-4">📁 Local file<br>Please host this page on a web server (GitHub Pages, Netlify, etc.) and refresh.<br>Then scan the QR code on your phone.</div>';
+                urlDisplay.innerText = currentUrl;
+                return;
+            }
+
+            // Generate QR code using the library
+            try {
+                const qr = qrcode(0, 'M'); // typeNumber 0 = auto, error correction M
+                qr.addData(currentUrl);
+                qr.make();
+
+                const cellSize = 4; // pixels per module
+                const margin = 2;    // quiet zone
+                const qrImage = qr.createImgTag(cellSize, margin);
+                
+                qrContainer.innerHTML = qrImage;
+                urlDisplay.innerText = currentUrl;
+            } catch (e) {
+                qrContainer.innerHTML = '<div class="text-red-600 text-sm">QR generation failed. Try again.</div>';
+                urlDisplay.innerText = currentUrl;
+            }
+        }
+
+        // ==================== HISTORY & MULTIVIEW ====================
+
+        function addToHistory(expr, result) {
+            fullHistory.push({ expr, result, time: new Date().toLocaleTimeString() });
+            if (fullHistory.length > 50) fullHistory.shift();
+            
+            historyEl.innerHTML = fullHistory.slice().reverse().map(h => 
+                `<div class="border-b border-slate-700 pb-2 last:border-0">
+                    <div class="text-slate-400 text-xs">${h.time}</div>
+                    <div class="text-white font-mono text-sm">${h.expr} = ${h.result}</div>
+                </div>`
+            ).join('');
+        }
+
+        function updateMultiview(expr, result) {
+            historyStack.push(`${expr} = ${result}`);
+            if (historyStack.length > 4) historyStack.shift();
+            multiviewEl.innerHTML = historyStack.map(line => 
+                `<div class="text-slate-300 text-xs">${line}</div>`
+            ).join('');
+        }
+
+        function clearHistory() {
+            fullHistory = [];
+            historyEl.innerHTML = '<div class="text-slate-500 text-center italic mt-10">No calculations yet</div>';
+        }
+
+        // ==================== INITIALIZATION ====================
+
+        window.onload = function() {
+            setMode('calc');
+            setAngleMode('DEG');
+            setBase('DEC');
+            updateConvUnits();
+            rebuildMatrixInputs();
+            matrixOpChanged();
+            changeSolverType();
+            generateInstallQR(); // generate QR on load
+        };
+    </script>
+</body>
+</html>
